@@ -7,14 +7,15 @@ import java.util.Scanner;
 
 public class Main {
     public static void main(String[] args) {
-        String fileName = "test-cases/1.cc";
+        String fileName = "";
 
-//        if (args.length == 0) {
-//            Scanner scanner = new Scanner(System.in);
-//            fileName = scanner.nextLine();
-//        } else {
-//            fileName = args[0];
-//        }
+        if (args.length == 0) {
+            Scanner scanner = new Scanner(System.in);
+            fileName = scanner.nextLine();
+            scanner.close();
+        } else {
+            fileName = args[0];
+        }
 
         if (fileName == null) {
             System.out.println("File name not provided");
@@ -30,7 +31,6 @@ public class Main {
             System.out.printf("%02d: (\"%s\", %s)\n", l.getLine(), lex.token, lex.type);
         } while (lex.type != TokenType.END_OF_FILE &&
                 lex.type != TokenType.INVALID_TOKEN &&
-                lex.type != TokenType.UNEXPECTED_EOF
-        );
+                lex.type != TokenType.UNEXPECTED_EOF);
     }
 }

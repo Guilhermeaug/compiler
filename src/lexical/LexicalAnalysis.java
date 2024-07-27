@@ -56,6 +56,7 @@ public class LexicalAnalysis implements AutoCloseable {
                         lex.token += (char) c;
                         state = 7;
                     } else if (c == '{') {
+                        lex.token += (char) c;
                         state = 8;
                     } else if (c == ':') {
                         lex.token += (char) c;
@@ -131,7 +132,12 @@ public class LexicalAnalysis implements AutoCloseable {
                     break;
                 case 8:
                     if (c == '}') {
+                        lex.token += (char) c;
                         lex.type = TokenType.TEXT;
+                        state = 99;
+                    } else if (c == '\n') {
+                        lex.token += (char) c;
+                        lex.type = TokenType.INVALID_TOKEN;
                         state = 99;
                     } else {
                         lex.token += (char) c;
