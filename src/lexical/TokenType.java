@@ -9,6 +9,8 @@ public enum TokenType {
     COMMA,
     OPEN_PAR,
     CLOSE_PAR,
+    OPEN_CURLY,
+    CLOSE_CURLY,
 
     ASSIGN, // :=
     NOT, // !
@@ -40,7 +42,8 @@ public enum TokenType {
     READ, // read
     WRITE, // write
 
-    NAME, // identifer
-    NUMBER,
+    IDENTIFIER, // identifer
+    INTEGER_CONST, // integer constant
+    REAL_CONST, // real constant
     TEXT
 }
