@@ -6,7 +6,7 @@ init
   read(j);
   read(k);
 
-  if (k <> 0)
+  if (k > 0) then
     result := j/k
   else
     result := 0

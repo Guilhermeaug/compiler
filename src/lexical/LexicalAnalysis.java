@@ -134,7 +134,6 @@ public class LexicalAnalysis implements AutoCloseable {
                         lex.type = TokenType.TEXT;
                         state = 99;
                     } else {
-                        System.out.println("entrou2");
                         lex.token += (char) c;
                     }
                     break;
@@ -172,8 +171,6 @@ public class LexicalAnalysis implements AutoCloseable {
         if (state == 98) {
             lex.type = st.find(lex.token);
         }
-
-        System.out.printf("%02d: (\"%s\", %s)\n", this.line, lex.token, lex.type);
 
         return lex;
     }

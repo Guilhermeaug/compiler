@@ -9,8 +9,6 @@ public enum TokenType {
     COMMA,
     OPEN_PAR,
     CLOSE_PAR,
-    OPEN_CURLY,
-    CLOSE_CURLY,
 
     ASSIGN, // :=
     NOT, // !

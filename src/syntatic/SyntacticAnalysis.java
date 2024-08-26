@@ -8,7 +8,7 @@ import lexical.TokenType;
 import java.util.Arrays;
 
 public class SyntacticAnalysis {
-    private LexicalAnalysis lex;
+    private final LexicalAnalysis lex;
     private Lexeme current;
 
     private SymbolTable st;
@@ -19,8 +19,6 @@ public class SyntacticAnalysis {
     }
 
     private void advance() {
-        // System.out.println("Advanced (\"" + current.token + "\", " +
-        // current.type + ")");
         current = lex.nextToken();
     }
 
@@ -28,8 +26,7 @@ public class SyntacticAnalysis {
         if (type == current.type) {
             current = lex.nextToken();
         } else {
-//            showError();
-            throw new RuntimeException("Syntax error: " + type + " expected, " + current.type + " found instead");
+            showError();
         }
     }
 
@@ -42,12 +39,12 @@ public class SyntacticAnalysis {
             default -> System.out.printf("Lexema não esperado [%s]\n", current.token);
         }
         throw new RuntimeException("Syntax error");
-//        System.exit(1);
     }
 
 
     public void start() {
         program();
+        System.out.println("Programa sintaticamente correto");
     }
 
     private void program() {
@@ -68,10 +65,8 @@ public class SyntacticAnalysis {
 
     private void declList() {
         decl();
-        while (current.type == TokenType.SEMICOLON) {
-            consume(TokenType.SEMICOLON);
-            decl();
-        }
+        consume(TokenType.SEMICOLON);
+        decl();
     }
 
     private void decl() {
