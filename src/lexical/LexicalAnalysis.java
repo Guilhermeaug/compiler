@@ -56,7 +56,6 @@ public class LexicalAnalysis implements AutoCloseable {
                         lex.token += (char) c;
                         state = 7;
                     } else if (c == '{') {
-                        System.out.println("entrou");
                         state = 8;
                     } else if (c == ':') {
                         lex.token += (char) c;

@@ -1,14 +1,10 @@
-import lexical.Lexeme;
 import lexical.LexicalAnalysis;
-import lexical.SymbolTable;
-import lexical.TokenType;
 import syntatic.SyntacticAnalysis;
 
 import java.util.Scanner;
 
 public class Main {
     public static void main(String[] args) {
-//        String fileName = "test-cases/1.cc";
         String fileName = null;
 
         if (args.length == 0) {

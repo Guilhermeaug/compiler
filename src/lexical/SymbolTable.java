@@ -56,11 +56,4 @@ public class SymbolTable {
     public void add(String token, TokenType type) {
         st.put(token, type);
     }
-
-    public void print() {
-        System.out.println("Symbol Table:");
-        for (Map.Entry<String, TokenType> entry : st.entrySet()) {
-            System.out.printf("%s: %s\n", entry.getKey(), entry.getValue());
-        }
-    }
 }
