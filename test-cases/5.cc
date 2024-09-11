@@ -12,5 +12,5 @@ init
     result := 0
   end;
 
-  write(res)
+  write(result)
 return

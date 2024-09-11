@@ -1,7 +1,7 @@
 app teste1
 var
-    integer a, b, c;
-    real result
+    integer c, teste1;
+    real result, a, b
 init
     read (a);
     read (c);

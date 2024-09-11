@@ -1,8 +1,7 @@
 package semantic;
 
-public enum IdentifierType {
+public enum Type {
     INTEGER,
     REAL,
     BOOLEAN,
-    APP_NAME
 }

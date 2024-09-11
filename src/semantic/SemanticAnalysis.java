@@ -8,11 +8,97 @@ import java.util.HashMap;
 
 public class SemanticAnalysis {
     private final SymbolTable st;
-    private final HashMap<String, Variable> variables;
+    private final HashMap<String, Variable> memory;
 
     public SemanticAnalysis() {
         this.st = new SymbolTable();
-        this.variables = new HashMap<>();
+        this.memory = new HashMap<>();
+    }
+
+    public void addIdentifier(String token, Type type) {
+        if (isReservedKeyword(token)) {
+            throw new SemanticException("Não é possível usar nomes reservados para declarar variáveis.");
+        }
+        if (isVariableDeclared(token)) {
+            throw new SemanticException("Variável já declarada.");
+        }
+        memory.put(token, new Variable(token, type));
+    }
+
+    public void checkVariableDeclared(String token) {
+        if (!isVariableDeclared(token)) {
+            throw new SemanticException("Variável não foi declarada antes do uso");
+        }
+    }
+
+    public void checkAssignment(String token, Type exprType) {
+        Variable variable = getVariable(token);
+        if (variable.type.equals(Type.REAL) && exprType.equals(Type.INTEGER)) {
+            return;
+        }
+        if (!variable.type.equals(exprType)) {
+            throw new SemanticException("Erro de atribuição");
+        }
+    }
+
+    public Type checkArithmeticOrLogicalOperation(Type leftType, Type rightType, TokenType op) {
+        if (Arrays.asList(TokenType.OR, TokenType.AND).contains(op)) {
+            return checkLogicalOperation(leftType, rightType);
+        } else if (Arrays.asList(TokenType.ADD, TokenType.SUB, TokenType.DIV, TokenType.MUL).contains(op)) {
+            return checkArithmeticOperation(leftType, rightType);
+        }
+        throw new SemanticException("Operação inválida");
+    }
+
+    public void checkUnaryArithmeticOperation(Type type) {
+        if (!type.equals(Type.INTEGER) && !type.equals(Type.REAL)) {
+            throw new SemanticException("Operação inválida");
+        }
+    }
+
+    public Type checkArithmeticOperation(Type leftType, Type rightType) {
+        if (leftType.equals(Type.BOOLEAN) || rightType.equals(Type.BOOLEAN)) {
+            throw new SemanticException("Operação inválida");
+        }
+        if (leftType.equals(Type.REAL) || rightType.equals(Type.REAL)) {
+            return Type.REAL;
+        }
+        return Type.INTEGER;
+    }
+
+    public Type checkLogicalOperation(Type leftType, Type rightType) {
+        if (leftType.equals(Type.BOOLEAN) && rightType.equals(Type.BOOLEAN)) {
+            return Type.BOOLEAN;
+        }
+        throw new SemanticException("Os dois operandos devem ser booleanos");
+    }
+
+    public Type checkComparisonOperation(Type leftType, Type rightType, TokenType op) {
+        if (Arrays.asList(TokenType.EQUAL, TokenType.NOT_EQUAL).contains(op)) {
+            if (leftType.equals(rightType)) {
+                return Type.BOOLEAN;
+            }
+            throw new SemanticException("Tipos incompatíveis");
+        } else if (Arrays.asList(TokenType.GREATER_THAN, TokenType.GREATER_EQUAL, TokenType.LOWER_THAN, TokenType.LOWER_EQUAL).contains(op)) {
+            if (leftType.equals(Type.BOOLEAN) || rightType.equals(Type.BOOLEAN)) {
+                throw new SemanticException("Tipos incompatíveis");
+            }
+            return Type.BOOLEAN;
+        }
+        throw new SemanticException("Operação inválida");
+    }
+
+    public void checkCondition(Type type) {
+        if (!type.equals(Type.BOOLEAN)) {
+            throw new SemanticException("Condição deve ser booleana");
+        }
+    }
+
+    public Variable getVariable(String token) {
+        if (!isVariableDeclared(token)) {
+            throw new SemanticException("Variável não foi declarada antes do uso");
+        }
+        return memory.get(token);
     }
 
     private boolean isReservedKeyword(String token) {
@@ -20,95 +106,6 @@ public class SemanticAnalysis {
     }
 
     private boolean isVariableDeclared(String token) {
-        return variables.containsKey(token);
-    }
-
-    public void addVariable(String token, IdentifierType type) {
-        if (isReservedKeyword(token)) {
-            throw new RuntimeException("Variable name cannot be a reserved keyword");
-        }
-        if (isVariableDeclared(token)) {
-            throw new RuntimeException("Variable already declared");
-        }
-
-        variables.put(token, new Variable(token, type));
-    }
-
-    public void checkVariableDeclared(String token) {
-        if (!isVariableDeclared(token)) {
-            throw new RuntimeException("Variable not declared");
-        }
-    }
-
-    public void checkAssignment(String token, IdentifierType type) {
-        Variable variable = getVariable(token);
-        if (variable.type.equals(IdentifierType.APP_NAME)) {
-            throw new RuntimeException("Cannot assign to app name");
-        }
-        if (variable.type.equals(IdentifierType.REAL) && type.equals(IdentifierType.INTEGER)) {
-            return;
-        }
-        if (!variable.type.equals(type)) {
-            throw new RuntimeException("Type mismatch");
-        }
-    }
-
-    public IdentifierType checkArithmeticOperation(IdentifierType type1, IdentifierType type2) {
-        if (type1.equals(IdentifierType.APP_NAME) || type2.equals(IdentifierType.APP_NAME)) {
-            throw new RuntimeException("Cannot perform arithmetic operation with app name");
-        }
-        if (type1.equals(IdentifierType.REAL) || type2.equals(IdentifierType.REAL)) {
-            return IdentifierType.REAL;
-        }
-        return IdentifierType.INTEGER;
-    }
-
-    public IdentifierType checkComparisonOperation(IdentifierType type1, IdentifierType type2) {
-        if (type1.equals(IdentifierType.APP_NAME) || type2.equals(IdentifierType.APP_NAME)) {
-            throw new RuntimeException("Cannot perform comparison operation with app name");
-        }
-        return IdentifierType.BOOLEAN;
-    }
-
-    public IdentifierType checkLogicalOperation(IdentifierType type1, IdentifierType type2) {
-        if (type1.equals(IdentifierType.APP_NAME) || type2.equals(IdentifierType.APP_NAME)) {
-            throw new RuntimeException("Cannot perform logical operation with app name");
-        }
-        if (type1.equals(IdentifierType.BOOLEAN) && type2.equals(IdentifierType.BOOLEAN)) {
-            return IdentifierType.BOOLEAN;
-        }
-        throw new RuntimeException("Type mismatch");
-    }
-
-    public IdentifierType checkArithmeticOrLogicalOperation(IdentifierType leftType, IdentifierType rightType, TokenType op) {
-        if (op.equals(TokenType.OR)) {
-            if (leftType.equals(IdentifierType.BOOLEAN) && rightType.equals(IdentifierType.BOOLEAN)) {
-                return IdentifierType.BOOLEAN;
-            } else {
-                throw new RuntimeException("Type mismatch");
-            }
-        } else if (Arrays.asList(TokenType.ADD, TokenType.SUB).contains(op)) {
-            return checkArithmeticOperation(leftType, rightType);
-        }
-        throw new RuntimeException("Invalid operation");
-    }
-
-    public void isBooleanCondition(IdentifierType type) {
-        if (!type.equals(IdentifierType.BOOLEAN)) {
-            throw new RuntimeException("Condition must be boolean");
-        }
-    }
-
-    public Variable getVariable(String token) {
-        return variables.get(token);
-    }
-
-    public void checkUnaryArithmeticOperation(IdentifierType type) {
-        if (type.equals(IdentifierType.APP_NAME)) {
-            throw new RuntimeException("Cannot perform unary arithmetic operation with app name");
-        }
-        if (!type.equals(IdentifierType.INTEGER) && !type.equals(IdentifierType.REAL)) {
-            throw new RuntimeException("Type mismatch");
-        }
+        return memory.containsKey(token);
     }
 }

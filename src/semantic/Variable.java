@@ -2,9 +2,9 @@ package semantic;
 
 public class Variable {
     public final String name;
-    public final IdentifierType type;
+    public final Type type;
 
-    public Variable(String name, IdentifierType type) {
+    public Variable(String name, Type type) {
         this.name = name;
         this.type = type;
     }

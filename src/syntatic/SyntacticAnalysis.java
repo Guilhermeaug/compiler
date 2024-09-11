@@ -4,7 +4,7 @@ import lexical.Lexeme;
 import lexical.LexicalAnalysis;
 import lexical.TokenType;
 import semantic.SemanticAnalysis;
-import semantic.IdentifierType;
+import semantic.Type;
 
 import java.util.Arrays;
 
@@ -19,35 +19,17 @@ public class SyntacticAnalysis {
         this.semanticAnalysis = new SemanticAnalysis();
     }
 
-    private void advance() {
-        current = lex.nextToken();
-    }
-
-    private void consume(TokenType type) {
-        if (type == current.type) {
-            current = lex.nextToken();
-        } else {
-            showError();
-        }
-    }
-
-    private void showError() {
-        System.out.printf("%02d: ", lex.getLine());
-        switch (current.type) {
-            case INVALID_TOKEN -> System.out.printf("Lexema inválido [%s]\n", current.token);
-            case UNEXPECTED_EOF, END_OF_FILE -> System.out.print("Fim de arquivo inesperado\n");
-            default -> System.out.printf("Lexema não esperado [%s]\n", current.token);
-        }
-        throw new RuntimeException("Syntax error");
-    }
-
     public void start() {
-        program();
+        try {
+            program();
+        } catch (RuntimeException e) {
+            System.out.printf("Erro na linha %02d\n", lex.getLine());
+            throw e;
+        }
     }
 
     private void program() {
         consume(TokenType.APP);
-        semanticAnalysis.addVariable(current.token, IdentifierType.APP_NAME);
         consume(TokenType.IDENTIFIER);
         body();
     }
@@ -64,36 +46,39 @@ public class SyntacticAnalysis {
 
     private void declList() {
         decl();
-        consume(TokenType.SEMICOLON);
-        decl();
+        while (current.type == TokenType.SEMICOLON) {
+            consume(TokenType.SEMICOLON);
+            decl();
+        }
     }
 
     private void decl() {
-        IdentifierType identifierType = type();
-        identList(identifierType);
+        Type type = type();
+        identList(type);
     }
 
-    private void identList(IdentifierType identifierType) {
-        semanticAnalysis.addVariable(current.token, identifierType);
+    private void identList(Type type) {
+        semanticAnalysis.addIdentifier(current.token, type);
         consume(TokenType.IDENTIFIER);
         while (current.type == TokenType.COMMA) {
             consume(TokenType.COMMA);
-            semanticAnalysis.addVariable(current.token, identifierType);
+            semanticAnalysis.addIdentifier(current.token, type);
             consume(TokenType.IDENTIFIER);
         }
     }
 
-    private IdentifierType type() {
+    private Type type() {
+        Type type = null;
         if (current.type == TokenType.INTEGER) {
             consume(TokenType.INTEGER);
-            return IdentifierType.INTEGER;
+            type = Type.INTEGER;
         } else if (current.type == TokenType.REAL) {
             consume(TokenType.REAL);
-            return IdentifierType.REAL;
+            type = Type.REAL;
         } else {
             showError();
-            return null;
         }
+        return type;
     }
 
     private void stmtList() {
@@ -119,15 +104,15 @@ public class SyntacticAnalysis {
         String identifier = current.token;
         consume(TokenType.IDENTIFIER);
         consume(TokenType.ASSIGN);
-        IdentifierType type = simpleExpr();
+        Type type = simpleExpr();
         semanticAnalysis.checkVariableDeclared(identifier);
         semanticAnalysis.checkAssignment(identifier, type);
     }
 
     private void ifStmt() {
         consume(TokenType.IF);
-        IdentifierType conditionType = condition();
-        semanticAnalysis.isBooleanCondition(conditionType);
+        Type conditionType = condition();
+        semanticAnalysis.checkCondition(conditionType);
         consume(TokenType.THEN);
         stmtList();
         if (current.type == TokenType.ELSE) {
@@ -145,8 +130,8 @@ public class SyntacticAnalysis {
 
     private void stmtSuffix() {
         consume(TokenType.UNTIL);
-        IdentifierType conditionType = condition();
-        semanticAnalysis.isBooleanCondition(conditionType);
+        Type conditionType = condition();
+        semanticAnalysis.checkCondition(conditionType);
     }
 
     private void readStmt() {
@@ -182,12 +167,12 @@ public class SyntacticAnalysis {
         }
     }
 
-    private IdentifierType condition() {
+    private Type condition() {
         return expression();
     }
 
-    private IdentifierType expression() {
-        IdentifierType leftType = simpleExpr();
+    private Type expression() {
+        Type leftType = simpleExpr();
         while (Arrays.asList(
                 TokenType.EQUAL,
                 TokenType.GREATER_THAN,
@@ -198,36 +183,36 @@ public class SyntacticAnalysis {
         ).contains(current.type)) {
             TokenType op = current.type;
             advance();
-            IdentifierType rightType = simpleExpr();
-            leftType = semanticAnalysis.checkComparisonOperation(leftType, rightType);
+            Type rightType = simpleExpr();
+            leftType = semanticAnalysis.checkComparisonOperation(leftType, rightType, op);
         }
         return leftType;
     }
 
-    private IdentifierType simpleExpr() {
-        IdentifierType leftType = term();
+    private Type simpleExpr() {
+        Type leftType = term();
         while (Arrays.asList(TokenType.ADD, TokenType.SUB, TokenType.OR).contains(current.type)) {
             TokenType op = current.type;
             advance();
-            IdentifierType rightType = term();
+            Type rightType = term();
             leftType = semanticAnalysis.checkArithmeticOrLogicalOperation(leftType, rightType, op);
         }
         return leftType;
     }
 
-    private IdentifierType term() {
-        IdentifierType leftType = factorA();
+    private Type term() {
+        Type leftType = factorA();
         while (Arrays.asList(TokenType.MUL, TokenType.DIV, TokenType.AND).contains(current.type)) {
             TokenType op = current.type;
             advance();
-            IdentifierType rightType = factorA();
+            Type rightType = factorA();
             leftType = semanticAnalysis.checkArithmeticOrLogicalOperation(leftType, rightType, op);
         }
         return leftType;
     }
 
-    private IdentifierType factorA() {
-        IdentifierType type;
+    private Type factorA() {
+        Type type;
         if (current.type == TokenType.SUB) {
             consume(TokenType.SUB);
             type = factor();
@@ -235,28 +220,28 @@ public class SyntacticAnalysis {
         } else if (current.type == TokenType.NOT) {
             consume(TokenType.NOT);
             type = factor();
-            semanticAnalysis.isBooleanCondition(type);
+            semanticAnalysis.checkCondition(type);
         } else {
             type = factor();
         }
         return type;
     }
 
-    private IdentifierType factor() {
-        IdentifierType type = null;
+    private Type factor() {
+        Type type = null;
         if (current.type == TokenType.IDENTIFIER) {
             String identifier = current.token;
             consume(TokenType.IDENTIFIER);
             type = semanticAnalysis.getVariable(identifier).type;
         } else if (current.type == TokenType.INTEGER_CONST) {
             consume(TokenType.INTEGER_CONST);
-            type = IdentifierType.INTEGER;
+            type = Type.INTEGER;
         } else if (current.type == TokenType.REAL_CONST) {
             consume(TokenType.REAL_CONST);
-            type = IdentifierType.REAL;
+            type = Type.REAL;
         } else if (current.type == TokenType.OPEN_PAR) {
             consume(TokenType.OPEN_PAR);
-            type = simpleExpr();
+            type = expression();
             consume(TokenType.CLOSE_PAR);
         } else {
             showError();
@@ -266,5 +251,26 @@ public class SyntacticAnalysis {
 
     private void literal() {
         consume(TokenType.TEXT);
+    }
+
+    private void advance() {
+        current = lex.nextToken();
+    }
+
+    private void consume(TokenType type) {
+        if (type == current.type) {
+            current = lex.nextToken();
+        } else {
+            showError();
+        }
+    }
+
+    private void showError() throws SyntacticException {
+        switch (current.type) {
+            case INVALID_TOKEN -> System.out.printf("Lexema inválido [%s]\n", current.token);
+            case UNEXPECTED_EOF, END_OF_FILE -> System.out.print("Fim de arquivo inesperado\n");
+            default -> System.out.printf("Lexema não esperado [%s]\n", current.token);
+        }
+        throw new SyntacticException("Syntax error");
     }
 }

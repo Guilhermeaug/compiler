@@ -11,7 +11,7 @@ init
   maior := 0;
 
   %Calcula a maior idade
-  if ( a>b && a>c ) then
+  if ( (a>b) && (a>c) ) then
     maior := a
   else
     if (b>c) then
